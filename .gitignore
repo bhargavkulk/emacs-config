@@ -1,0 +1,12 @@
+.cache/
+auto-save-list/
+elpa/
+emacs-backup/
+eshell/
+locals/
+transient/
+config.el
+history
+places
+recentf
+*~
