@@ -513,25 +513,39 @@ If the new path's directories does not exist, create them."
   '(modus-themes-lang-warning ((t (:underline (:color "#d0de00" :style line)))))
   '(modus-themes-lang-note ((t (:underline (:color "#5f6fff" :style line))))))
 
+(defun gitstatus ()
+  (when vc-mode
+    (when (buffer-file-name)
+      (pcase (vc-state (buffer-file-name))
+        ('up-to-date "✓")
+        ('edited "*")
+        ('needs-update "∴")
+        ('added "+")
+        ('removed "-")
+        ('conflict "!")
+        ('ignored "~")
+        (_ "?")))))
+
 (setq-default mode-line-format
               (list
                ;; Display modified buffer icon (flame if modified)
                '(:eval (propertize " λ"
                                   'face (if (buffer-modified-p)
                                             '(:foreground "red")
-                                          'mode-line)))
+                                          'mode-line-buffer-id)))
                " "
-               ;; Display buffer name
-               '(:propertize "%b" face mode-line-buffer-id)
+               "%b"
                " "
                ;; Display major mode
-               '(:propertize mode-name face mode-line-buffer-id)
+               ;;'(:propertize mode-name face mode-line-buffer-id)
+               mode-name
                ;; Display Git branch if inside a Git repo
                '(:eval (if (and (boundp 'vc-mode) vc-mode)
                           (let ((branch-name (substring vc-mode 5)))  ;; Extract branch name
-                            (propertize (concat " [" branch-name "]") 'face 'mode-line))
-                         " "))
-               "|"
+                            (propertize (concat " [" branch-name "|" (gitstatus) "]") 'face 'mode-line-buffer-id))
+                         ""))
+               " |"
 	           '(:propertize "%4l:%c" face mode-line-buffer-id)
                " | "
-               '(:eval (propertize (format-time-string "%a %d, %Y %I:%M %p") 'face 'mode-line))))
+               '(:eval (propertize (format-time-string "%a %d, %Y %I:%M %p") 'face 'mode-line-buffer-id
+                                   ))))
