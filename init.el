@@ -525,7 +525,7 @@ If the new path's directories does not exist, create them."
         ('conflict "!")
         ('ignored "~")
         (_ "?")))))
-;asjndkajsnd
+
 (setq-default mode-line-format
               (list
                ;; Display modified buffer icon (flame if modified)
