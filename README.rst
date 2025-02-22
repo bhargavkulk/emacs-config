@@ -16,7 +16,7 @@ Emacs generates a bunch of auto-generated settings which usually just
 clutters the end of the init file. I am not really a fan of this, and I
 rather have all of this stuff hidden out of sight.
 
-.. code:: commonlisp
+.. code:: lisp
 
    (setq custom-file (expand-file-name "custom.el" user-emacs-directory))
    (load custom-file)
@@ -27,7 +27,7 @@ Commands to quickly open, edit, and reconfigure the init file
 With this I can type in the commands ``initfile`` to bring up this file,
 and ``reconfigure`` reload the config when I make any changes.
 
-.. code:: commonlisp
+.. code:: lisp
 
    (defun initfile () (interactive)
       (find-file (concat user-emacs-directory "/emacs.org")))
@@ -42,7 +42,7 @@ Meow Mode
 forcing vim onto emacs, and it never worked for me. ``meow``'s amazing
 command mode also means I never have to press ``Control`` every again.
 
-.. code:: commonlisp
+.. code:: lisp
 
    (defun meow-setup ()
      (setq meow-cheatsheet-layout meow-cheatsheet-layout-qwerty)
@@ -159,7 +159,7 @@ General Emacs Settings
 These are a bunch of generic Emacs settings that are self explanatory. I
 have added some comments wherever necessary.
 
-.. code:: commonlisp
+.. code:: lisp
 
    (defun backup-file-name (fpath)
      "Return a new file path of a given file path. If the new path's
@@ -384,7 +384,7 @@ WhichKey
 One the packages of all time. Displays what keys can be pressed at the
 start of a keychord.
 
-.. code:: commonlisp
+.. code:: lisp
 
    (use-package which-key
      :ensure t
@@ -397,7 +397,7 @@ So, for some reason when I run Emacs in MacOS, it does not inherit the
 shell environment. So stuff like the ``PATH`` variable simply do not
 work! ``exec-path-from-shell`` fixes that.
 
-.. code:: commonlisp
+.. code:: lisp
 
    (use-package exec-path-from-shell
      :ensure t
@@ -411,7 +411,7 @@ Minibuffer Enhancements
 UI based on the default Emacs completion system. Just gives a nice list
 of possible commands in the minbuffer directly.
 
-.. code:: commonlisp
+.. code:: lisp
 
    (use-package vertico
      :ensure t
@@ -420,7 +420,7 @@ of possible commands in the minbuffer directly.
 
 ``marginalia`` adds annotations to minibuffer options
 
-.. code:: commonlisp
+.. code:: lisp
 
    (use-package marginalia
      :init
@@ -430,7 +430,7 @@ of possible commands in the minbuffer directly.
 completion function completing-read. Completion allows you to quickly
 select an item from a list of candidates.
 
-.. code:: commonlisp
+.. code:: lisp
 
    (use-package consult
      :ensure t
@@ -446,7 +446,7 @@ select an item from a list of candidates.
 pattern into space-separated components, and matches candidates that
 match all of the components in any order.
 
-.. code:: commonlisp
+.. code:: lisp
 
    (use-package orderless
      :ensure t
@@ -456,7 +456,7 @@ match all of the components in any order.
 
 ``corfu`` gives nice popup completion-at-point.
 
-.. code:: commonlisp
+.. code:: lisp
 
    (use-package corfu
      :ensure t
@@ -490,7 +490,7 @@ match all of the components in any order.
 ``cape`` provides completion at point extensions which can be used in
 combination with ``corfu``.
 
-.. code:: commonlisp
+.. code:: lisp
 
    (use-package cape
      :ensure t
@@ -504,7 +504,7 @@ Starting Buffer
 ``enlight`` is nice starting buffer package. Needs the ``grid`` package
 for nice layouts.
 
-.. code:: commonlisp
+.. code:: lisp
 
    (use-package grid
      :init
@@ -554,7 +554,7 @@ Olivetti Mode
 Very important mode, centers text in screen, so that I am not creening
 left when I type.
 
-.. code:: commonlisp
+.. code:: lisp
 
    (use-package olivetti
      :ensure t)
@@ -570,7 +570,7 @@ Modeline
 
 ``solaire-mode`` makes the modeline look more distinct.
 
-.. code:: commonlisp
+.. code:: lisp
 
    (use-package solaire-mode
      :config
@@ -578,12 +578,12 @@ Modeline
 
 Make modeline better man.
 
-.. code:: commonlisp
+.. code:: lisp
 
    (set-face-attribute 'mode-line nil
                        :box nil)
 
-.. code:: commonlisp
+.. code:: lisp
 
    (defun vc-branch-name (file backend)
      "Return capitalized VC branch name for FILE with BACKEND."
@@ -617,7 +617,7 @@ Make modeline better man.
 Git Status
 ----------
 
-.. code:: commonlisp
+.. code:: lisp
 
    (use-package magit
      :ensure t)
@@ -625,7 +625,7 @@ Git Status
 Programming Stuff
 =================
 
-.. code:: commonlisp
+.. code:: lisp
 
    (use-package racket-mode
      :defer t
