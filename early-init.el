@@ -15,19 +15,13 @@
 (setq default-frame-alist '((fullscreen . maximized)
 
                             ;; You can turn off scroll bars by uncommenting these lines:
-                            ;; (vertical-scroll-bars . nil)
-                            ;; (horizontal-scroll-bars . nil)
-
-                            ;; Setting the face in here prevents flashes of
-                            ;; color as the theme gets activated
-                            (background-color . "#000000")
-                            (foreground-color . "#ffffff")
-                            (ns-appearance . dark)
+                            (vertical-scroll-bars . nil)
+                            (horizontal-scroll-bars . nil)
                             (ns-transparent-titlebar . t)))
 
 ;; Hide all the package stuff here
 
-(require 'package)
+(setq package-enable-at-startup nil)
 (require 'use-package)
 (setq use-package-always-ensure t)
 
@@ -43,10 +37,6 @@
         ("ORG"          . 10)
         ("MELPA Stable" . 5)
         ("nongnu"       . 0)))
-
-(package-initialize)
-(unless package-archive-contents
- (package-refresh-contents))
 
 (defvar local-pkgs (concat user-emacs-directory "locals/"))
 (add-to-list 'load-path local-pkgs)
