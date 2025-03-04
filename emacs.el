@@ -1,6 +1,7 @@
 (setq custom-file (expand-file-name "custom.el" user-emacs-directory))
 (load custom-file)
 
+(require 'cl-lib)
 (defvar elpaca-installer-version 0.10)
 (defvar elpaca-directory (expand-file-name "elpaca/" user-emacs-directory))
 (defvar elpaca-builds-directory (expand-file-name "builds/" elpaca-directory))
@@ -65,11 +66,6 @@ tiled side-by-side."
              (with-selected-window window
                (split-window-below)))
         (and
-         ;; If WINDOW is the only usable window on its frame (it is
-         ;; the only one or, not being the only one, all the other
-         ;; ones are dedicated) and is not the minibuffer window, try
-         ;; to split it horizontally disregarding the value of
-         ;; `split-height-threshold'.
          (let ((frame (window-frame window)))
            (or
             (eq window (frame-root-window frame))
@@ -95,18 +91,23 @@ tiled side-by-side."
     (make-directory (file-name-directory backupFilePath) (file-name-directory backupFilePath))
     backupFilePath))
 
-
+(use-package hydra
+  :ensure t
+  :init
+  (defhydra hydra-goto (:color blue)
+    ("l" consult-goto-line "Line")
+    ("f" consult-flymake "Flymake Error"))
+  :config
+  (keymap-global-set "C-x g" 'hydra-goto/body))
 
 (use-package emacs
   :ensure nil
   :init
-  (set-face-attribute 'font-lock-comment-face nil :slant 'italic)
-  (set-face-attribute 'font-lock-keyword-face nil :weight 'bold)
-  (set-face-attribute 'font-lock-builtin-face nil :weight 'bold)
-  (setopt inhibit-startup-screen t ; Disable the startup screen
-          inhibit-startup-message t ; Suppress the startup message in the *Messages*
-          inhibit-startup-echo-area-message "bhargavkk")
-  (setopt visible-bell t
+  (setopt inhibit-startup-screen t
+          inhibit-startup-message t
+          ;;debug-on-error t
+          inhibit-startup-echo-area-message "bhargavkk"
+          visible-bell t
           display-time-default-load-average nil
           sentence-end-double-space nil
           make-backup-file-name-function 'bk/backup-file-name
@@ -118,7 +119,6 @@ tiled side-by-side."
           use-short-answers t
           save-interprogram-paste-before-kill t
           history-length 25
-          debug-on-error t
           read-buffer-completion-ignore-case t
           read-file-name-completion-ignore-case t
           find-file-suppress-same-file-warnings t
@@ -189,6 +189,9 @@ tiled side-by-side."
   (recentf-mode t)
   (save-place-mode t)
 
+  (setq major-mode-remap-alist
+        '((python-mode . python-ts-mode)))
+
   :bind (("<escape>" . keyboard-escape-quit)
          ("C-x C-z" . nil)
          ("C-<wheel-up>" . nil)
@@ -197,7 +200,6 @@ tiled side-by-side."
          :map minibuffer-mode-map
          ("TAB" . minibuffer-complete)))
 
-;; eshell config
 (use-package eshell
   :ensure nil
   :defer t
@@ -255,7 +257,11 @@ tiled side-by-side."
            ("C-x o" . consult-outline))
   :config
   (setq vertico-multiform-commands
-        `((consult-imenu buffer ,(lambda (_) (text-scale-set -1)))
+        `((consult-grep buffer ,(lambda (_) (text-scale-set -1)))
+          (consult-ripgrep buffer ,(lambda (_) (text-scale-set -1)))
+          (consult-line buffer ,(lambda (_) (text-scale-set -1)))
+          (consult-flymake buffer ,(lambda (_) (text-scale-set -1)))
+          (consult-imenu buffer ,(lambda (_) (text-scale-set -1)))
           (consult-outline buffer ,(lambda (_) (text-scale-set -1)))))
   (setq consult-narrow-key "<"))
 
@@ -339,8 +345,8 @@ tiled side-by-side."
 (use-package magit
   :after transient
   :ensure t
-  :bind (:map global-map
-              ("C-x g" . magit-status)))
+  :config
+  (global-unset-key (kbd "C-x g")))
 
 (use-package diff-hl
   :ensure t
@@ -348,8 +354,7 @@ tiled side-by-side."
   :config
   (set-face-attribute 'diff-hl-insert nil :foreground "#eeffee")
   (set-face-attribute 'diff-hl-delete nil :foreground "#ffeeee")
-  (set-face-attribute 'diff-hl-change nil :foreground "#ddddff")
-  )
+  (set-face-attribute 'diff-hl-change nil :foreground "#ddddff"))
 
 (use-package scratch
   :ensure t
@@ -360,8 +365,8 @@ tiled side-by-side."
   (popper-group-function #'popper-group-by-directory)
   (popper-echo-dispatch-actions t)
   :bind (:map popper-mode-map
-              ("C-x `"     . popper-toggle)
-              ("C-M-`"   . popper-cycle)
+              ("C-x `" . popper-toggle)
+              ("C-M-`" . popper-cycle)
               ("C-M-<tab>" . popper-toggle-type))
   :hook ((emacs-startup . popper-echo-mode))
   :init
@@ -392,8 +397,7 @@ tiled side-by-side."
           flycheck-error-list-mode flycheck-verify-mode
 
           gnus-article-mode devdocs-mode
-          grep-mode occur-mode rg-mode deadgrep-mode ag-mode pt-mode
-          youdao-dictionary-mode osx-dictionary-mode fanyi-mode
+
 
           "^\\*Process List\\*$" process-menu-mode
           list-environment-mode cargo-process-mode
@@ -423,23 +427,39 @@ tiled side-by-side."
           "\\*docker-.+\\*"
           "\\*prolog\\*" inferior-python-mode
           "\\*rustfmt\\*$"))
+  (setq popper-window-height 0.33)
   :config
   (setopt popper-mode-line '(:eval (propertize " POP " 'face 'mode-line-emphasis)))
   (popper-mode 1)
   (popper-echo-mode 1))
 
-;;TODO: write a project hydra
+(use-package rg
+  :ensure t)
+
 (use-package project
   :ensure nil
-  :bind (:map project-prefix-map
-              ("m" . magit-project-status))
+  :after (hydra magit rg)
   :config
-  (setq project-switch-commands '((project-find-file "find file")
-                                  (project-find-regexp "find regexp")
-                                  (project-dired "dired")
-                                  (project-eshell "eshell")
-                                  (magit-project-status "magit")
-                                  (shell "shell"))))
+  (global-set-key (kbd "C-x p") 'hydra-project/body)
+
+  (defun project-rg (query)
+    "Run ripgrep in the current project's root directory with QUERY."
+    (interactive "sRipgrep search: ")
+    (let ((default-directory (or (project-root (project-current t))
+                                 default-directory)))
+      (rg query "*" default-directory)))
+
+  (global-set-key (kbd "C-c p r") #'project-rg)
+
+  (defhydra hydra-project (:color blue)
+    ("p" project-switch-project "Switch Project" :column "Project")
+    ("f" project-find-file "Open File")
+    ("d" project-dired "Open Dired")
+    ("m" magit-project-status "Git")
+    ("e" project-eshell "Open EShell" :column "Shell")
+    ("!" project-shell-command "Run Command")
+    ("c" consult-ripgrep "Consult Ripgrep" :column "Search")
+    ("r" project-rg "rg")))
 
 (use-package racket-mode
   :defer t
@@ -480,6 +500,16 @@ Looks for .venv directory in project root and activates the Python interpreter."
           (message "Activated Python environment at %s" venv-path))
       (error "No Python environment found in %s" project-root))))
 
+(use-package python
+  :ensure nil
+  :defer t
+  :after hydra
+  :bind (:map python-mode-map
+              ("C-x l" . hydra-python/body))
+  :init
+  (defhydra hydra-python (:color blue)
+    ("v" venv-activate "Start venv")))
+
 (use-package apheleia
   :ensure t
   :defer t
@@ -489,10 +519,6 @@ Looks for .venv directory in project root and activates the Python interpreter."
         '(ruff-isort ruff))
   (setf (alist-get 'python-ts-mode apheleia-mode-alist)
         '(ruff-isort ruff)))
-
-(use-package poly-rst
-  :ensure t
-  :defer t)
 
 (use-package yaml-mode
   :ensure t
@@ -507,12 +533,23 @@ Looks for .venv directory in project root and activates the Python interpreter."
 (use-package expreg
   :ensure t)
 
+(use-package markdown-mode
+  :ensure t)
+
 (use-package eglot
   :ensure nil
   :defer t
+  :after hydra
+  :bind (("C-x e" . hydra-eglot/body))
   :custom
   (eglot-send-changes-idle-time 0.1)
   (eglot-extend-to-xref t)
+  :init
+  (defhydra hydra-eglot (:color blue)
+    ("s" eglot "Start LSP")
+    ("a" eglot-code-actions "Code Actions")
+    ("r" eglot-rename "Rename")
+    ("k" eglot-shutdown "Shutdown LSP"))
   :config
   (setq eglot-highlight-symbol nil)
   (fset #'jsonrpc--log-event #'ignore)
@@ -524,19 +561,6 @@ Looks for .venv directory in project root and activates the Python interpreter."
   (add-to-list 'eglot-server-programs
                '(racket-mode . ("racket" "-l" "racket-langserver")))
   (add-to-list 'eglot-server-programs '((c++-mode c-mode) "clangd")))
-
-;; TODO: change to a hydra
-(defvar eglot-map
-  (let ((map (make-sparse-keymap)))
-    (define-key map "s" 'eglot)
-    (define-key map "a" 'eglot-code-actions)
-    (define-key map "o" 'eglot-code-action-organize-imports)
-    (define-key map "r" 'eglot-rename)
-    (define-key map "k" 'eglot-shutdown)
-    (define-key map "f" 'eglot-format)
-    map)
-  "Eglot keymap")
-(global-set-key (kbd "C-x e") eglot-map)
 
 (use-package flymake
   :ensure nil
@@ -583,6 +607,34 @@ Looks for .venv directory in project root and activates the Python interpreter."
   :ensure t
   :config
   (breadcrumb-mode))
+
+(use-package surround
+  :ensure t)
+
+(use-package avy
+  :ensure t
+  :after hydra
+  :bind ("C-x a" . hydra-avy/body)
+  :init
+  (defhydra hydra-avy (:exit t :hint nil)
+    "
+ Line^^       Region^^        Goto
+----------------------------------------------------------
+ [_y_] yank   [_Y_] yank      [_c_] timed char  [_C_] char
+ [_m_] move   [_M_] move      [_w_] word        [_W_] any word
+ [_k_] kill   [_K_] kill      [_l_] line        [_L_] end of line"
+    ("c" avy-goto-char-timer)
+    ("C" avy-goto-char)
+    ("w" avy-goto-word-1)
+    ("W" avy-goto-word-0)
+    ("l" avy-goto-line)
+    ("L" avy-goto-end-of-line)
+    ("m" avy-move-line)
+    ("M" avy-move-region)
+    ("k" avy-kill-whole-line)
+    ("K" avy-kill-region)
+    ("y" avy-copy-line)
+    ("Y" avy-copy-region)))
 
 (defun meow-setup ()
   (setq meow-cheatsheet-layout meow-cheatsheet-layout-qwerty)
@@ -656,8 +708,10 @@ Looks for .venv directory in project root and activates the Python interpreter."
    '("Q" . consult-goto-line)
    '("r" . meow-replace)
    '("R" . meow-swap-grab)
+   '("S" . surround-insert)
    '("s" . meow-kill)
    '("t" . meow-till)
+   '("T" . completion-at-point)
    '("u" . meow-undo)
    '("U" . meow-undo-in-selection)
    '("v" . meow-visit)
@@ -668,6 +722,8 @@ Looks for .venv directory in project root and activates the Python interpreter."
    '("y" . meow-save)
    '("Y" . meow-sync-grab)
    '("z" . meow-pop-selection)
+   '("Z" . hydra-avy/body)
+   '("?" . meow-cheatsheet)
    '("'" . repeat)
    '("/" . consult-line)
    '("=" . expreg-expand)
@@ -686,7 +742,8 @@ Looks for .venv directory in project root and activates the Python interpreter."
   (meow-keypad-indicator ((t (:foreground "#ffffff" :background "#b59944"))))
   (meow-beacon-indicator ((t (:foreground "#ffffff" :background "#0949ac"))))
   :config
-  (setopt meow-keypad-leader-dispatch "C-x")
+  (setopt meow-keypad-leader-dispatch "C-x"
+          meow-keypad-ctrl-meta-prefix ?\\)
   (setq-default meow-replace-state-name-list
                 '((normal . "NOR")
                   (motion . "MTN")
@@ -695,3 +752,42 @@ Looks for .venv directory in project root and activates the Python interpreter."
                   (beacon . "BCN")))
   (meow-setup)
   (meow-global-mode 1))
+
+(set-face-attribute 'mode-line nil
+                    :background "#000000"
+                    :foreground "#ffffff"
+                    :box '(:line-width 3 :color "#000000"))
+(set-face-attribute 'mode-line-inactive nil
+                    :background "#878a8b"
+                    :foreground "#ffffff"
+                    :box '(:line-width 3 :color "#878a8b"))
+(set-face-attribute 'org-block nil
+                    :inherit 'default)
+(set-face-attribute 'font-lock-string-face nil
+                    :foreground "#878a8b")
+(set-face-attribute 'font-lock-comment-face nil
+                    :foreground "#cbcdcd"
+                    :slant 'italic)
+(set-face-attribute 'font-lock-doc-face nil
+                    :foreground "#878a8b")
+(set-face-attribute 'font-lock-variable-name-face nil
+                    :foreground "#00000")
+(set-face-attribute 'font-lock-keyword-face nil
+                    :weight 'bold)
+(set-face-attribute 'font-lock-builtin-face nil
+                    :weight 'bold)
+(set-face-attribute 'org-document-title nil
+                    :height 2.0)
+;; Resize Org headings
+(dolist (face '(org-level-1
+                org-level-2
+                org-level-3
+                org-level-4
+                org-level-5
+                org-level-6
+                org-level-7
+                org-level-8))
+  (set-face-attribute face nil :inherit 'variable-pitch :height 1.2))
+
+(require 'org-indent)
+(set-face-attribute 'org-indent nil :inherit '(org-hide fixed-pitch))
