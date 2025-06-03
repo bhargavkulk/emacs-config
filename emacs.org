@@ -46,7 +46,7 @@ don't commit them to my config, they dissapear!
           (if-let* ((buffer (pop-to-buffer-same-window "*elpaca-bootstrap*"))
                     ((zerop (apply #'call-process `("git" nil ,buffer t "clone"
                                                     ,@(when-let* ((depth (plist-get order :depth)))
-                                                        (list (format "--depth=%d" depth) "--no-single-branch"))
+                                                       (list (format "--depth=%d" depth) "--no-single-branch"))
                                                     ,(plist-get order :repo) ,repo))))
                     ((zerop (call-process "git" nil buffer t "checkout"
                                           (or (plist-get order :ref) "--"))))
@@ -70,6 +70,23 @@ don't commit them to my config, they dissapear!
   (elpaca-use-package-mode))
 #+end_src
 
+* Fonts and Faces and Themes
+
+I have a custom version of Iosevka called [[https://github.com/bhargavkulk/iosevka-clear][Iosevka Clear]], which has slightly
+taller line spacing and shorter characters. It also has a quasi-proportional
+serif variant which I use for non-programming text formats like =rst= and =org=.
+
+#+begin_src emacs-lisp
+  (use-package doom-themes
+    :after corfu
+    :ensure t
+    :config
+    ;; Global settings (defaults)
+    (setq doom-themes-enable-bold t    ; if nil, bold is universally disabled
+          doom-themes-enable-italic t) ; if nil, italics is universally disabled
+    (load-theme 'doom-ayu-dark t))
+#+end_src
+
 * Custom Functions and Commands
 
 With these functions I can type in the commands =initfile= to bring up this file, and
@@ -87,9 +104,8 @@ These are some internal functions I use in other settings.
 
 #+begin_src emacs-lisp
   (defun bk/split-window-sensibly (&optional window)
-    "Based on split-window-sensibly, but designed to prefer a horizontal split,
-      i.e. windows
-  tiled side-by-side."
+    "Based on split-window-sensibly, but designed to prefer a horizontal
+  split, i.e. windows tiled side-by-side."
     (interactive)
     (let ((window (or window (selected-window))))
       (or (and (window-splittable-p window t)
@@ -118,8 +134,8 @@ These are some internal functions I use in other settings.
                  (split-window-right))))))))
 
   (defun bk/backup-file-name (fpath)
-    "Return a new file path of a given file path.
-    If the new path's directories does not exist, create them."
+    "Return a new file path of a given file path. If the new path's
+  directories does not exist, create them."
     (let* ((backupRootDir (concat user-emacs-directory "emacs-backup/"))
            (filePath (replace-regexp-in-string "[A-Za-z]:" "" fpath )) ; remove Windows driver letter in path
            (backupFilePath (replace-regexp-in-string "//" "/" (concat backupRootDir filePath "~") )))
@@ -174,6 +190,7 @@ These are self-explantory.
             split-height-threshold 4
             split-width-threshold 80
             split-window-preferred-function 'bk/split-window-sensibly
+
             display-line-numbers-width 3
             auto-revert-avoid-polling t
             auto-revert-interval 5
@@ -382,6 +399,8 @@ components in any order.
 #+begin_src emacs-lisp
   (use-package corfu
     :ensure t
+    :custom-face
+    (corfu-current ((t (:inherit completions-highlight))))
     :init
     (global-corfu-mode)
     :bind
@@ -408,42 +427,42 @@ components in any order.
 layouts. Gives easy one character access to =recentf= and list of projects.
 
 #+begin_src emacs-lisp
-  (use-package grid
-    :ensure (:host github :repo "ichernyshovvv/grid.el"))
+  ;; (use-package grid
+  ;;   :ensure (:host github :repo "ichernyshovvv/grid.el"))
 
-  (defface enlight-violet
-    '((t (:foreground "purple" :width expanded)))
-    "Violet face for dashboard.")
+  ;; (defface enlight-violet
+  ;;   '((t (:foreground "purple" :width expanded)))
+  ;;   "Violet face for dashboard.")
 
-  (defvar enlight-emacs
-    (propertize
-     "███████╗███╗   ███╗ █████╗  ██████╗███████╗
-      ██╔════╝████╗ ████║██╔══██╗██╔════╝██╔════╝
-      █████╗  ██╔████╔██║███████║██║     ███████╗
-      ██╔══╝  ██║╚██╔╝██║██╔══██║██║     ╚════██║
-      ███████╗██║ ╚═╝ ██║██║  ██║╚██████╗███████║
-      ╚══════╝╚═╝     ╚═╝╚═╝  ╚═╝ ╚═════╝╚══════╝"
-     'face 'enlight-violet))
+  ;; (defvar enlight-emacs
+  ;;   (propertize
+  ;;    "███████╗███╗   ███╗ █████╗  ██████╗███████╗
+  ;;     ██╔════╝████╗ ████║██╔══██╗██╔════╝██╔════╝
+  ;;     █████╗  ██╔████╔██║███████║██║     ███████╗
+  ;;     ██╔══╝  ██║╚██╔╝██║██╔══██║██║     ╚════██║
+  ;;     ███████╗██║ ╚═╝ ██║██║  ██║╚██████╗███████║
+  ;;     ╚══════╝╚═╝     ╚═╝╚═╝  ╚═╝ ╚═════╝╚══════╝"
+  ;;    'face 'enlight-violet))
 
-  (use-package enlight
-    :ensure t
-    :after grid
-    :init
-    (setopt initial-buffer-choice #'enlight)
-    :custom
-    (enlight-content
-     (concat
-      (grid-get-box `(:align center :content ,enlight-emacs  :width 80))
-      "\n\n"
-      (grid-get-box
-       `(:align center
-         :width 80
-         :content
-         ,(enlight-menu
-           '(("Files"
-              ("Recent" (consult-recent-file) "r"))
-             ("Other"
-              ("Projects" project-switch-project "p")))))))))
+  ;; (use-package enlight
+  ;;   :ensure t
+  ;;   :after grid
+  ;;   :init
+  ;;   (setopt initial-buffer-choice #'enlight)
+  ;;   :custom
+  ;;   (enlight-content
+  ;;    (concat
+  ;;     (grid-get-box `(:align center :content ,enlight-emacs  :width 80))
+  ;;     "\n\n"
+  ;;     (grid-get-box
+  ;;      `(:align center
+  ;;        :width 80
+  ;;        :content
+  ;;        ,(enlight-menu
+  ;;          '(("Files"
+  ;;             ("Recent" (consult-recent-file) "r"))
+  ;;            ("Other"
+  ;;             ("Projects" project-switch-project "p")))))))))
 #+end_src
 
 * Olivetti Mode
@@ -454,7 +473,7 @@ I type.
 #+begin_src emacs-lisp
   (use-package olivetti
     :ensure t)
-  (setq-default olivetti-body-width 120)
+  (setq-default olivetti-body-width 100)
 
   (use-package auto-olivetti
     :ensure (:repo "https://codeberg.org/ashton314/auto-olivetti")
@@ -483,11 +502,7 @@ I type.
 #+begin_src emacs-lisp
   (use-package diff-hl
     :ensure t
-    :hook (prog-mode text-mode)
-    :config
-    (set-face-attribute 'diff-hl-insert nil :foreground "#eeffee")
-    (set-face-attribute 'diff-hl-delete nil :foreground "#ffeeee")
-    (set-face-attribute 'diff-hl-change nil :foreground "#ddddff"))
+    :hook (prog-mode text-mode))
 #+end_src
 
 * Scratch Buffer
@@ -532,8 +547,6 @@ Lets me open a quick scratch buffer for the current major mode I am in.
             "\\*Embark \\(Collect\\|Live\\):.*\\*$"
 
             bookmark-bmenu-mode
-            comint-mode
-            compilation-mode
             help-mode helpful-mode
             tabulated-list-mode
             Buffer-menu-mode
@@ -546,13 +559,6 @@ Lets me open a quick scratch buffer for the current major mode I am in.
 
             "^\\*Process List\\*$" process-menu-mode
             list-environment-mode cargo-process-mode
-
-            "^\\*.*eshell.*\\*.*$"
-            "^\\*.*shell.*\\*.*$"
-            "^\\*.*terminal.*\\*.*$"
-            "^\\*.*vterm[inal]*.*\\*.*$"
-            "^\\*eat\\*.*$"
-            "^\\*.*-eat\\*.*$"
 
             "\\*DAP Templates\\*$" dap-server-log-mode
             "\\*ELP Profiling Restuls\\*" profiler-report-mode
@@ -629,6 +635,40 @@ I used to write a lot of Racket, but not anymore :(
     :ensure t)
 #+end_src
 
+** OcaML
+
+I am using ocaml for some personal projects.
+
+#+begin_src emacs-lisp
+  (use-package tuareg
+    :ensure t
+    )
+
+  (defun switch-activate ()
+    "Activate the current opam switch and update exec-path for merlin."
+    (interactive)
+    (let ((opam-switch-path (shell-command-to-string "opam switch show")))
+      (if (string-empty-p opam-switch-path)
+          (message "No active opam switch found.")
+        (progn
+          ;; Clean up the string by removing any extra newline or spaces
+          (setq opam-switch-path (string-trim opam-switch-path))
+          ;; The executables are in the '_opam' directory within the switch
+          (let ((bin-path (concat opam-switch-path "/_opam/bin")))
+            ;; Set the OPAM_SWITCH_PREFIX environment variable
+            (setenv "OPAM_SWITCH_PREFIX" opam-switch-path)
+            ;; Update the exec-path to include the correct bin directory from the local switch
+            (setq exec-path (append (list bin-path) exec-path))
+            (message "Activated opam switch at %s" opam-switch-path))))))
+#+end_src
+
+** Rust
+
+#+begin_src emacs-lisp
+  (use-package rust-mode
+    :ensure t)
+#+end_src
+
 ** Python
 
 This command activates a python virtual environment or ``venv'' in the project
@@ -696,7 +736,9 @@ to format my code.
     (setf (alist-get 'python-mode apheleia-mode-alist)
           '(ruff-isort ruff))
     (setf (alist-get 'python-ts-mode apheleia-mode-alist)
-          '(ruff-isort ruff)))
+          '(ruff-isort ruff))
+    (setf (alist-get 'rust-mode apheleia-formatters)
+          '("rustfmt" "--edition" "2024" "--quiet" "--emit" "stdout")))
 #+end_src
 
 ** YAML
@@ -714,9 +756,6 @@ headings to imenu for easy navigation.
     :defer t
     :after yaml-mode
     :config (yaml-imenu-enable))
-
-  (use-package expreg
-    :ensure t)
 #+end_src
 
 ** Markdown Mode
@@ -747,15 +786,7 @@ headings to imenu for easy navigation.
       ("k" eglot-shutdown "Shutdown LSP"))
     :config
     (setq eglot-highlight-symbol nil)
-    (fset #'jsonrpc--log-event #'ignore)
-    (setq-default eglot-workspace-configuration
-                  '((haskell
-                     (plugin
-                      (stan
-                       (globalOn . :json-false))))))
-    (add-to-list 'eglot-server-programs
-                 '(racket-mode . ("racket" "-l" "racket-langserver")))
-    (add-to-list 'eglot-server-programs '((c++-mode c-mode) "clangd")))
+    (fset #'jsonrpc--log-event #'ignore))
 #+end_src
 
 ** Errors
@@ -765,27 +796,10 @@ better. I don't like squiggly lines.
 
 #+begin_src emacs-lisp
   (use-package flymake
-    :ensure nil
-    :config
-    (set-face-attribute 'flymake-error nil :underline '(:style line :color "red"))
-    (set-face-attribute 'flymake-note nil :underline '(:style line :color "green"))
-    (set-face-attribute 'flymake-warning nil :underline '(:style line :color "blue")))
+    :ensure nil)
 #+end_src
 
-* Fonts and Faces
 
-I have a custom version of Iosevka called [[https://github.com/bhargavkulk/iosevka-clear][Iosevka Clear]], which has slightly
-taller line spacing and shorter characters. It also has a quasi-proportional
-serif variant which I use for non-programming text formats like =rst= and =org=.
-
-#+begin_src emacs-lisp
-  (when (member "Iosevka Clear Type" (font-family-list))
-    (set-face-attribute 'variable-pitch nil :font "Iosevka Clear Type" :height 170))
-
-  (when (member "Iosevka Clear" (font-family-list))
-    (set-face-attribute 'default nil :font "Iosevka Clear" :height 170)
-    (set-face-attribute 'fixed-pitch nil :font "Iosevka Clear" :height 170))
-#+end_src
 
 =mixed-pitch-mode= ensures that code, literal blocks etc do not use the variable
 pitch font.
@@ -793,8 +807,8 @@ pitch font.
 #+begin_src emacs-lisp
   (use-package mixed-pitch
     :ensure t
-    :after enlight
-    :hook ((enlight-mode org-mode text-mode) . mixed-pitch-mode))
+    :after doom-themes
+    :hook ((org-mode text-mode) . mixed-pitch-mode))
 #+end_src
 
 * Modeline
@@ -810,9 +824,6 @@ pitch font.
 My custom mode-line:
 
 #+begin_src emacs-lisp
-  (set-face-attribute 'mode-line nil
-                      :box nil)
-
   (setq-default mode-line-format
                 '("%e"
                   (:eval (meow-indicator))
@@ -826,7 +837,9 @@ My custom mode-line:
                           (t (propertize " [λ] " 'face '(:weight light)))))
                   (:eval (when vc-mode
                          (propertize (concat "[" (substring vc-mode 5) "]") 'face '(:weight light))))
-                  (:eval (propertize " %4l:%3c" 'face '(:weight light)))))
+                  (:eval (propertize " %4l:%3c" 'face '(:weight light)))
+                  " "
+                  (:eval (flymake--mode-line-counters))))
 #+end_src
 
 =breadcrumb= just displays a nice headerline showing the current file and the
@@ -885,22 +898,7 @@ would be the current function for example.
 
 =meow= is the best modal editing package in emacs. =evil= seems like forcing vim
 onto emacs, and it never worked for me. =meow='s amazing command mode also means
-I never have to press @@html:<kbd>Ctrl</kbd>@@ ever again. Neat thing about
-=meow= is the leader dispatch. If I press @@html:<kbd>space</kbd>@@ followed by:
-
-+ @@html:<kbd>x</kbd>@@ it's as if I pressed @@html:<kbd>Ctrl</kbd>@@ +
-  @@html:<kbd>x</kbd>@@
-+ @@html:<kbd>c</kbd>@@ it's as if I pressed @@html:<kbd>Ctrl</kbd>@@ +
-  @@html:<kbd>c</kbd>@@
-+ @@html:<kbd>h</kbd>@@ it's as if I pressed @@html:<kbd>Ctrl</kbd>@@ +
-  @@html:<kbd>h</kbd>@@
-+ @@html:<kbd>m</kbd>@@ it's as if I pressed @@html:<kbd>Alt</kbd>@@
-+ @@html:<kbd>g</kbd>@@ it's as if I pressed @@html:<kbd>Ctrl</kbd>@@ +
-  @@html:<kbd>Alt</kbd>@@
-
-But if I press any other key, say @@html:<kbd>p</kbd>@@, it's as if I pressed
-@@html:<kbd>Ctrl</kbd>@@ + @@html:<kbd>x</kbd>@@ + @@html:<kbd>p</kbd>@@, making
-@@html:<kbd>space</kbd>@@ work like a leader key!
+I never have to press Control ever again.
 
 #+begin_src emacs-lisp
   (defun meow-setup ()
@@ -927,6 +925,8 @@ But if I press any other key, say @@html:<kbd>p</kbd>@@, it's as if I pressed
      '("/" . meow-keypad-describe-key)
      '("?" . meow-cheatsheet))
     (meow-normal-define-key
+     '("$" . back-to-indentation)
+     '("^" . end-of-line)
      '("0" . meow-expand-0)
      '("9" . meow-expand-9)
      '("8" . meow-expand-8)
@@ -1022,44 +1022,77 @@ But if I press any other key, say @@html:<kbd>p</kbd>@@, it's as if I pressed
 #+end_src
 
 * Custom Faces
+#+begin_src emacs-lisp
+  (use-package lilypond-mode
+    :ensure (:repo "https://github.com/bhargavkulk/lilypond.git"))
+#+end_src
 
 #+begin_src emacs-lisp
-  (set-face-attribute 'mode-line nil
-                      :background "#000000"
-                      :foreground "#ffffff"
-                      :box '(:line-width 3 :color "#000000"))
-  (set-face-attribute 'mode-line-inactive nil
-                      :background "#878a8b"
-                      :foreground "#ffffff"
-                      :box '(:line-width 3 :color "#878a8b"))
-  (set-face-attribute 'org-block nil
-                      :inherit 'default)
-  (set-face-attribute 'font-lock-string-face nil
-                      :foreground "#878a8b")
-  (set-face-attribute 'font-lock-comment-face nil
-                      :foreground "#cbcdcd"
-                      :slant 'italic)
-  (set-face-attribute 'font-lock-doc-face nil
-                      :foreground "#878a8b")
-  (set-face-attribute 'font-lock-variable-name-face nil
-                      :foreground "#00000")
-  (set-face-attribute 'font-lock-keyword-face nil
-                      :weight 'bold)
-  (set-face-attribute 'font-lock-builtin-face nil
-                      :weight 'bold)
-  (set-face-attribute 'org-document-title nil
-                      :height 2.0)
-  ;; Resize Org headings
-  (dolist (face '(org-level-1
-                  org-level-2
-                  org-level-3
-                  org-level-4
-                  org-level-5
-                  org-level-6
-                  org-level-7
-                  org-level-8))
-    (set-face-attribute face nil :inherit 'variable-pitch :height 1.2))
+  (define-derived-mode egglog-mode lisp-data-mode "Egglog"
+    "Major mode for Egglog, derived from lisp-data-mode."
+    (setq-local comment-start ";")
+    (setq-local comment-end "")
+    (setq-local font-lock-defaults
+                '((
+                   ;; Keywords
+                   ("\\_<\\(birewrite\\|calc\\|check\\|clear\\|clear-rules\\|datatype\\|declare\\|define\\|delete\\|extract\\|fail\\|function\\|include\\|input\\|let\\|panic\\|pop\\|print-stats\\|print-size\\|print-table\\|print\\|push\\|query\\|relation\\|repeat\\|rewrite\\|rule\\|run-schedule\\|run\\|set\\|sort\\|union\\)\\_>" . font-lock-keyword-face)
+                   ;; Identifiers (variables)
+                   ("\\<[a-zA-Z][a-zA-Z0-9_]*\\>" . font-lock-variable-name-face)
+                   ;; Numbers (integers and floats)
+                   ("-?[0-9]+\\(?:\\.[0-9]*\\)?" . font-lock-constant-face)
+                   ;; Strings
+                   ("\"[^\"]*\"" . font-lock-string-face)
+                   ;; Comments
+                   (";.*" . font-lock-comment-face)
+                   ;; Builtins (symbols starting with :)
+                   (":\\w+" . font-lock-builtin-face))))
 
-  (require 'org-indent)
-  (set-face-attribute 'org-indent nil :inherit '(org-hide fixed-pitch))
+    ;; Make `datatype` indent like `defun`
+    (put 'datatype 'lisp-indent-function 'defun))
+
+
+  (add-to-list 'auto-mode-alist '("\\.egg\\'" . egglog-mode))
+
+
+  (add-hook 'org-mode-hook
+            #'(lambda ()
+                (setq prettify-symbols-alist
+                      `((":PROPERTIES:" . "~")
+                        ("#+begin_src" . "λ")
+                        ("#+begin:" . ":")
+                        ("#+end:" . "□")
+                        ("#+end_src" . "□")
+                        (":END:" . "□")))
+                (prettify-symbols-mode)))
+
+#+end_src
+
+
+#+begin_src emacs-lisp
+  (custom-set-faces
+   '(fringe ((t (:inherit region))))
+   '(font-lock-comment-face ((t (:slant italic))))
+   '(font-lock-string-face ((t (:slant italic))))
+   '(font-lock-keyword-face ((t (:weight bold))))
+   '(font-lock-escape-face ((t (:weight normal))))
+   '(corfu-current ((t (:inherit vertico-current))))
+   '(variable-pitch ((t (:font "Iosevka Clear Type" :height 160))))
+   '(default ((t (:font "Iosevka Clear" :weight semi-light :height 160))))
+   '(fixed-pitch ((t (:font "Iosevka Clear" :height 160)))))
+
+  (defun open-eshell-in-small-frame ()
+    "Open `eshell` in a new frame that's 1/4 the size of the current frame."
+    (interactive)
+    (let* ((char-width (frame-char-width))
+           (char-height (frame-char-height))
+           (cols (/ (frame-width) 2))    ;; half cols and rows → 1/4 total area
+           (rows (/ (frame-height) 2))
+           (new-frame (make-frame `((width . ,cols)
+                                    (height . ,rows)))))
+      (select-frame-set-input-focus new-frame)
+      (eshell)))
+
+  (use-package copilot-chat
+     :ensure (:repo "https://github.com/chep/copilot-chat.el.git"))
+
 #+end_src

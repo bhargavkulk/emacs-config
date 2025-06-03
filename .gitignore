@@ -10,6 +10,8 @@ history
 places
 recentf
 *~
-elpaca
+elpaca/
 projects
 tree-sitter/
+eln-cache/
+.DS_Store

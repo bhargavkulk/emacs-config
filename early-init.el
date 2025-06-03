@@ -27,18 +27,7 @@
 
 (setq package-archives
       '(("GNU ELPA"     . "https://elpa.gnu.org/packages/")
-        ("MELPA"        . "https://melpa.org/packages/")
-        ("ORG"          . "https://orgmode.org/elpa/")
-        ("MELPA Stable" . "https://stable.melpa.org/packages/")
-        ("nongnu"       . "https://elpa.nongnu.org/nongnu/"))
+        ("MELPA"        . "https://melpa.org/packages/"))
       package-archive-priorities
       '(("GNU ELPA"     . 20)
-        ("MELPA"        . 15)
-        ("ORG"          . 10)
-        ("MELPA Stable" . 5)
-        ("nongnu"       . 0)))
-
-(defvar local-pkgs (concat user-emacs-directory "locals/"))
-(add-to-list 'load-path local-pkgs)
-(let ((default-directory local-pkgs))
-  (normal-top-level-add-subdirs-to-load-path))
+        ("MELPA"        . 15)))
