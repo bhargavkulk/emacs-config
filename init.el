@@ -375,7 +375,6 @@
   :after solarized-theme
   :hook ((markdown-mode org-mode) . (lambda () (mixed-pitch-mode +1))))
 
-
 ;;;; Exec Path From Shell | MACOS shenanigans
 (use-package exec-path-from-shell
   :if (memq window-system '(mac ns))
@@ -624,14 +623,14 @@
    '("Y" . meow-sync-grab)
    '("z" . meow-pop-selection)
    '("Z" . hydra-avy/body)
-   '("?" . meow-cheatsheet)
+   '("?" . consult-line)
    '("'" . repeat)
-   '("/" . consult-line)
-                                        ;'("=" . expreg-expand)
-                                        ;'("<up>" . windmove-up)
-                                        ;'("<down>" . windmove-down)
-                                        ;'("<left>" . windmove-left)
-                                        ;'("<right>" . windmove-right)
+   '("/" . execute-extended-command)
+   ;;'("=" . expreg-expand)
+   ;;'("<up>" . windmove-up)
+   ;;'("<down>" . windmove-down)
+   ;;'("<left>" . windmove-left)
+   ;;'("<right>" . windmove-right)
    '("<escape>" . ignore)))
 
 (use-package meow
@@ -900,10 +899,14 @@
 
 (defsubst bk/mode-line-lhs ()
   (let* ((active? (mode-line-window-selected-p)))
-    `((:eval (bk/mode-line-meow ,active?))
+    `((:eval (cond
+              (buffer-read-only (propertize " Ω " 'face '(:weight light :inverse-video t)))
+              ((buffer-modified-p) (propertize " Δ " 'face '(:weight light :inverse-video t)))
+              (t (propertize " λ " 'face '(:weight light :inverse-video t)))))
+      (:eval (bk/mode-line-meow ,active?))
       (,active? (:eval bk/mode-line-vcs-info))
       " "
-      (:eval (bk/mode-line-buffer-name))
+      (:eval (propertize (bk/mode-line-buffer-name) 'face '(:weight bold)))
       " "
       "%4l:%3c")))
 
