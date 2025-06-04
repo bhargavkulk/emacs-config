@@ -5,6 +5,36 @@
   (eq system-type 'darwin))
 
 ;;; Functions
+(defun bk/split-window-sensibly (&optional window)
+  "Based on split-window-sensibly, but designed to prefer a horizontal
+  split, i.e. windows tiled side-by-side."
+  (interactive)
+  (let ((window (or window (selected-window))))
+    (or (and (window-splittable-p window t)
+             ;; Split window horizontally
+             (with-selected-window window
+               (split-window-right)))
+        (and (window-splittable-p window)
+             ;; Split window vertically
+             (with-selected-window window
+               (split-window-below)))
+        (and
+         (let ((frame (window-frame window)))
+           (or
+            (eq window (frame-root-window frame))
+            (catch 'done
+              (walk-window-tree (lambda (w)
+                                  (unless (or (eq w window)
+                                              (window-dedicated-p w))
+                                    (throw 'done nil)))
+                                frame)
+              t)))
+         (not (window-minibuffer-p window))
+         (let ((split-width-threshold 0))
+           (when (window-splittable-p window t)
+             (with-selected-window window
+               (split-window-right))))))))
+
 (defun revert-this-buffer ()
   "Revert the current buffer."
   (interactive)
@@ -99,6 +129,10 @@
         completions-format 'one-column
         completions-group t
         completion-auto-select 'second-tab
+
+        split-height-threshold 4
+        split-width-threshold 80
+        split-window-preferred-function 'bk/split-window-sensibly
 
         delete-by-moving-to-trash t
         make-backup-file nil
@@ -710,6 +744,12 @@
                      'face '(:inherit shadow :height 0.8))
                     " "))))
   (setq hs-set-up-overlay #'hs-display-code-line-counts))
+
+(use-package mistty)
+
+(use-package perfect-margin
+  :config
+  (setopt perfect-margin-visible-width 110))
 
 (use-package popper
   :custom
