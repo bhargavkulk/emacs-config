@@ -1035,7 +1035,7 @@ I never have to press Control ever again.
     (setq-local font-lock-defaults
                 '((
                    ;; Keywords
-                   ("\\_<\\(birewrite\\|calc\\|check\\|clear\\|clear-rules\\|datatype\\|declare\\|define\\|delete\\|extract\\|fail\\|function\\|include\\|input\\|let\\|panic\\|pop\\|print-stats\\|print-size\\|print-table\\|print\\|push\\|query\\|relation\\|repeat\\|rewrite\\|rule\\|run-schedule\\|run\\|set\\|sort\\|union\\)\\_>" . font-lock-keyword-face)
+       ("\\_<\\(birewrite\\|calc\\|check\\|clear\\|clear-rules\\|datatype\\|declare\\|define\\|delete\\|extract\\|fail\\|function\\|include\\|input\\|let\\|panic\\|pop\\|print-stats\\|print-size\\|print-table\\|print\\|push\\|query\\|relation\\|repeat\\|rewrite\\|rule\\|run-schedule\\|run\\|set\\|sort\\|union\\)\\_>" . font-lock-keyword-face)
                    ;; Identifiers (variables)
                    ("\\<[a-zA-Z][a-zA-Z0-9_]*\\>" . font-lock-variable-name-face)
                    ;; Numbers (integers and floats)
@@ -1049,8 +1049,6 @@ I never have to press Control ever again.
 
     ;; Make `datatype` indent like `defun`
     (put 'datatype 'lisp-indent-function 'defun))
-
-
   (add-to-list 'auto-mode-alist '("\\.egg\\'" . egglog-mode))
 
 

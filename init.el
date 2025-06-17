@@ -96,7 +96,7 @@
 ;;; Customizing Stuff
 ;;;; User Info
 (setopt user-full-name "Bhargav"
-	    user-mail-address "bhargavkishork@gmail.com") 3
+	    user-mail-address "bhargavkishork@gmail.com")
 
 ;;;; Custom-File
 (setopt custom-file (expand-file-name "custom.el" user-emacs-directory))
@@ -109,7 +109,7 @@
 
 ;;;; Saner Defaults
 (setq-default major-mode       'text-mode
-	          fill-column      803
+	          fill-column      80
 	          tab-width        4
 	          indent-tabs-mode nil
 	          create-lockfiles nil
@@ -221,9 +221,7 @@
         history-length 25
 
         backward-delete-char-untabify-method nil
-        minibuffer-prompt-properties '(read-only t cursor-intangible t face minibuffer-prompt)
-
-        )
+        minibuffer-prompt-properties '(read-only t cursor-intangible t face minibuffer-prompt))
 
 (when macos?
   (setopt ns-use-thin-smoothing t
@@ -371,7 +369,7 @@
   :init
   (setopt solarized-scale-org-headlines t
           solarized-scale-markdown-headlines t
-          solarized-highlight-numbers t)
+          solarized-highlight-numbers nil)
   :config
   (load-theme 'solarized-selenized-black t))
 
@@ -550,8 +548,8 @@
     ("d" project-dired "Open Dired")
     ("m" magit-project-status "Git")
     ("e" project-eshell "Open EShell" :column "Shell")
-    ("!" project-shell-command "Run Command")
-    ("c" consult-ripgrep "Consult Ripgrep" :column "Search")
+    ("c" project-compile "Run Command")
+    ("g" consult-ripgrep "Consult Ripgrep" :column "Search")
     ("r" project-rg "rg")))
 
 ;;; Magit
@@ -559,13 +557,33 @@
   :ensure t)
 
 (use-package magit
-  :ensure t)
+  :ensure t
+  :config
+  (setq magit-display-buffer-function
+        (lambda (buffer)
+          (display-buffer
+           buffer
+           (cond ((and (derived-mode-p 'magit-mode)
+                       (eq (with-current-buffer buffer major-mode)
+                           'magit-status-mode))
+                  nil)
+                 ((memq (with-current-buffer buffer major-mode)
+                        '(magit-process-mode
+                          magit-revision-mode
+                          magit-diff-mode
+                          magit-stash-mode))
+                  nil)
+                 (t
+                  '(display-buffer-same-window)))))))
 
 (use-package diff-hl
   :ensure t
   :after magit
   :config
-  (add-hook 'magit-post-refresh-hook 'diff-hl-magit-post-refresh))
+  (add-hook 'prog-mode 'diff-hl-mode))
+
+(use-package expreg
+  :ensure t)
 
 ;;; Meow
 (defun meow-setup ()
@@ -592,6 +610,8 @@
    '("/" . meow-keypad-describe-key)
    '("?" . meow-cheatsheet))
   (meow-normal-define-key
+   '("=" . expreg-expand)
+   '("+" . expreg-contract)
    '("$" . back-to-indentation)
    '("^" . end-of-line)
    '("0" . meow-expand-0)
@@ -751,6 +771,9 @@
   :config
   (setopt perfect-margin-visible-width 110))
 
+(use-package esh-autosuggest
+  :hook (eshell-mode . esh-autosuggest-mode))
+
 (use-package popper
   :custom
   (popper-group-function #'popper-group-by-directory)
@@ -814,6 +837,9 @@
   (setopt popper-mode-line '(:eval (propertize " POP " 'face 'mode-line-emphasis)))
   (popper-mode 1)
   (popper-echo-mode 1))
+
+(setq major-mode-remap-alist '((python-mode . python-ts-mode)))
+
 
 ;;; Programming Stuff
 ;;;; Apheleia | Linter
@@ -883,6 +909,30 @@
 
           (message "Activated Python environment at %s" venv-path))
       (error "No Python environment found in %s" project-root))))
+
+;;; Egglog
+(define-derived-mode egglog-mode lisp-data-mode "Egglog"
+  "Major mode for Egglog, derived from lisp-data-mode."
+  (setq-local comment-start ";")
+  (setq-local comment-end "")
+  (setq-local font-lock-defaults
+              '((
+                 ;; Keywords
+                 ("\\_<\\(birewrite\\|constructor\\|calc\\|check\\|clear\\|clear-rules\\|datatype\\|declare\\|define\\|delete\\|extract\\|fail\\|function\\|include\\|input\\|let\\|panic\\|pop\\|print-stats\\|print-size\\|print-table\\|print\\|push\\|query\\|relation\\|repeat\\|rewrite\\|rule\\|run-schedule\\|run\\|set\\|sort\\|union\\)\\_>" . font-lock-keyword-face)
+                 ;; Identifiers (variables)
+                 ("\\<[a-zA-Z][a-zA-Z0-9_]*\\>" . font-lock-variable-name-face)
+                 ;; Numbers (integers and floats)
+                 ("-?[0-9]+\\(?:\\.[0-9]*\\)?" . font-lock-constant-face)
+                 ;; Strings
+                 ("\"[^\"]*\"" . font-lock-string-face)
+                 ;; Comments
+                 (";.*" . font-lock-comment-face)
+                 ;; Builtins (symbols starting with :)
+                 (":\\w+" . font-lock-builtin-face))))
+
+  ;; Make `datatype` indent like `defun`
+  (put 'datatype 'lisp-indent-function 'defun))
+(add-to-list 'auto-mode-alist '("\\.egg\\'" . egglog-mode))
 
 ;;; MODELINE
 (defsubst bk/mode-line-meow (active?)
