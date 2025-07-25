@@ -15,3 +15,8 @@ projects
 tree-sitter/
 eln-cache/
 .DS_Store
+.lsp-session-v1
+bookmarks
+my-packages/
+request/
+tutorial/

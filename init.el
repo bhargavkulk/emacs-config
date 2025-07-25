@@ -35,6 +35,20 @@
              (with-selected-window window
                (split-window-right))))))))
 
+(defun bk/scroll-up-center ()
+  "Scroll up and recenter cursor vertically."
+  (interactive)
+  (scroll-up-command)
+  (recenter))
+
+(commandp 'bk/scroll-up-center)
+
+(defun bk/scroll-down-center ()
+  "Scroll down and recenter cursor vertically."
+  (interactive)
+  (scroll-down-command)
+  (recenter))
+
 (defun revert-this-buffer ()
   "Revert the current buffer."
   (interactive)
@@ -116,6 +130,14 @@
 	          word-wrap        t
 	          truncate-lines   t
 	          cursor-type      'bar)
+
+(setopt backup-directory-alist '(("." . "~/.config/emacs/backups"))
+        make-backup-files t    ;; ensure backups are enabled
+        backup-by-copying t    ;; don't clobber symlinks
+        version-control t      ;; use versioned backups
+        delete-old-versions t  ;; delete excess backup versions
+        kept-new-versions 6
+        kept-old-versions 2)
 
 (setopt confirm-kill-emacs #'y-or-n-p
         use-short-answers t
@@ -289,10 +311,21 @@
       which-key-lighter nil
       which-key-show-remaining-keys t)
 
+(defun bk/select-window (window &rest _)
+  "Select WINDOW for display-buffer-alist"
+  (select-window window))
+(setq display-buffer-alist
+      '(((or . ((derived-mode . occur-mode)))
+         (display-buffer-reuse-mode-window display-buffer-at-bottom)
+         (body-function . bk/select-window)
+         (dedicated . t)
+         (preserve-size . (t . t)))))
+
+
 
 ;;; Global KeyBindings
 (global-set-key (kbd "<escape>") #'keyboard-escape-quit)
-(global-set-key (kbd "C-x C-z") nil)
+;; (global-set-key (kbd "C-x C-z") nil)
 (global-set-key (kbd "C-<wheel-up>") nil)
 (global-set-key (kbd "C-<wheel-down>") nil)
 (global-set-key (kbd "C-x C-r") #'recentf)
@@ -306,6 +339,9 @@
 (defun bk/setup-fonts ()
   "Setup fonts."
   (when (display-graphic-p)
+    (set-face-attribute 'fixed-pitch nil
+                        :font (font-spec :family bk/font-monospace
+                                         :size bk/font-size))
     (set-face-attribute 'default nil
                         :font (font-spec :family bk/font-monospace
                                          :size bk/font-size))
@@ -358,6 +394,36 @@
 (add-hook 'after-init-hook #'elpaca-process-queues)
 (elpaca `(,@elpaca-order))
 
+;; isearch stuff
+(use-package isearch
+  :ensure nil
+  :config
+  (defun bk/occur-from-isearch ()
+    (interactive)
+    (let ((query (if isearch-regexp
+                     isearch-string
+                   (regexp-quote isearch-string))))
+      (isearch-update-ring isearch-string isearch-regexp)
+      (let (search-nonincremental-instead)
+        (ignore-errors (isearch-done t t)))
+      (occur query)))
+
+  (defadvice isearch-mode (around isearch-mode-default-string (forward &optional regexp op-fun recursive-edit word-p) activate)
+    (if (and transient-mark-mode mark-active (not (eq (mark) (point))))
+        (progn
+          (isearch-update-ring (buffer-substring-no-properties (mark) (point)))
+          (deactivate-mark)
+          ad-do-it
+          (if (not forward)
+              (isearch-repeat-backward)
+            (goto-char (mark))
+            (isearch-repeat-forward)))
+      ad-do-it))
+  :bind
+  (:map isearch-mode-map
+        ("C-." . isearch-forward-symbol-at-point)
+        ("C-o" . bk/occur-from-isearch)))
+
 ;; Install use-package support
 (elpaca elpaca-use-package
   (elpaca-use-package-mode))
@@ -367,9 +433,7 @@
 (use-package solarized-theme
   :ensure (:repo "https://github.com/bhargavkulk/solarized-theme")
   :init
-  (setopt solarized-scale-org-headlines t
-          solarized-scale-markdown-headlines t
-          solarized-highlight-numbers nil)
+  (setopt solarized-highlight-numbers nil)
   :config
   (load-theme 'solarized-selenized-black t))
 
@@ -377,12 +441,11 @@
 (use-package spacious-padding
   :ensure t
   :init
-  (setopt spacious-padding-widths
-          '(:internal-border-width 5
-                                   :header-line-width 4
-                                   :mode-line-width 4
-                                   :right-divider-width 1
-                                   :fringe-width 8)
+  (setopt spacious-padding-widths '(:internal-border-width 5
+                                                           :header-line-width 4
+                                                           :mode-line-width 4
+                                                           :right-divider-width 1
+                                                           :fringe-width 8)
           spacious-padding-subtle-mode-line t)
   :config
   (spacious-padding-mode 1))
@@ -405,7 +468,7 @@
 ;;;; Mixed Pitch
 (use-package mixed-pitch
   :after solarized-theme
-  :hook ((markdown-mode org-mode) . (lambda () (mixed-pitch-mode +1))))
+  :hook ((markdown-mode org-mode adoc-mode) . (lambda () (mixed-pitch-mode +1))))
 
 ;;;; Exec Path From Shell | MACOS shenanigans
 (use-package exec-path-from-shell
@@ -475,21 +538,10 @@
   :ensure t
   :bind (([remap switch-to-buffer] . consult-buffer)
          ("C-x C-b" . consult-buffer)
-         ("C-x i" . consult-imenu)
-         ([remap yank-pop]   . consult-yank-pop)
-         ("C-s" . consult-line)
-         ("M-g e" . consult-compile-error)
-         ("M-g f" . consult-flymake)
-         ("M-g g" . consult-goto-line)
-         ("M-g M-g" . consult-goto-line)
-         ("C-x o" . consult-outline))
+         ([remap yank-pop]   . consult-yank-pop))
   :config
   (setopt vertico-multiform-commands
-          `((consult-grep buffer ,(lambda (_) (text-scale-set -1)))
-            (consult-ripgrep buffer ,(lambda (_) (text-scale-set -1)))
-            (consult-line buffer ,(lambda (_) (text-scale-set -1)))
-            (consult-flymake buffer ,(lambda (_) (text-scale-set -1)))
-            (consult-imenu buffer ,(lambda (_) (text-scale-set -1)))
+          `((consult-imenu buffer ,(lambda (_) (text-scale-set -1)))
             (consult-outline buffer ,(lambda (_) (text-scale-set -1))))
           consult-narrow-key "<"))
 
@@ -500,21 +552,23 @@
 (use-package avy
   :ensure t
   :after hydra
-  :bind ("C-x a" . hydra-avy/body)
+  :bind (:map isearch-mode-map
+              ("C-j" . avy-isearch))
+  :config
+  (setopt avy-all-windows nil
+          avy-all-windows-alt t
+          avy-background t
+          avy-style 'pre)
   :init
   (defhydra hydra-avy (:exit t :hint nil)
     "
    Line^^       Region^^        Goto
-  ----------------------------------------------------------
-   [_y_] yank   [_Y_] yank      [_c_] timed char  [_C_] char
-   [_m_] move   [_M_] move      [_w_] word        [_W_] any word
-   [_k_] kill   [_K_] kill      [_l_] line        [_L_] end of line"
+  ----------------------------------------------
+   [_y_] yank   [_Y_] yank      [_c_] timed char
+   [_m_] move   [_M_] move      [_C_] char
+   [_k_] kill   [_K_] kill"
     ("c" avy-goto-char-timer)
     ("C" avy-goto-char)
-    ("w" avy-goto-word-1)
-    ("W" avy-goto-word-0)
-    ("l" avy-goto-line)
-    ("L" avy-goto-end-of-line)
     ("m" avy-move-line)
     ("M" avy-move-region)
     ("k" avy-kill-whole-line)
@@ -525,6 +579,22 @@
 ;;; RipGrep
 (use-package rg
   :ensure t)
+
+(use-package org
+  :ensure nil
+  :config
+  (setq org-startup-with-inline-images t
+        org-startup-folded 'showall
+        org-default-notes-file "~/Notes/append.org")
+
+  (setq org-capture-templates
+        '(("a" "Append Note"
+           entry
+           (file "~/Notes/append.org")
+           "* %U\n%?\n"
+           :empty-lines 1)))
+
+  (global-set-key (kbd "C-c c") #'org-capture))
 
 ;;; Project
 (use-package project
@@ -582,7 +652,96 @@
   :config
   (add-hook 'prog-mode 'diff-hl-mode))
 
+(use-package hl-todo
+  :ensure t
+  :after magit
+  :config
+  (add-hook 'prog-mode 'hl-todo-mode))
+
 (use-package expreg
+  :ensure t)
+
+(use-package denote
+  :ensure t
+  :hook (dired-mode . denote-dired-mode)
+  :bind
+  (("C-c n n" . denote)
+   ("C-c n r" . denote-rename-file)
+   ("C-c n l" . denote-link)
+   ("C-c n b" . denote-backlinks)
+   ("C-c n d" . denote-dired)
+   ("C-c n g" . denote-grep))
+  :config
+  (setq denote-directory (expand-file-name "~/howm"))
+  (setq denote-known-keywords (list "life" "bhargav" "emacs" "philosophy"))
+  (denote-rename-buffer-mode 1))
+
+(use-package howm
+  :ensure t
+  :init
+  (require 'howm-org)
+  :config
+  (defun bk/howm-basename-chop (str)
+    "Advice for `howm-view-item-basename'.
+Takes a file's basename, STR, and returns only the portion before \"--\",
+with timestamps like \"20250711T111213\" converted to \"2025-07-11-111213\"."
+    (let ((dashes-pos (string-match "--" str)))
+      (cond
+       (dashes-pos
+        (let ((ts (substring str 0 dashes-pos)))
+          (format "%s-%s-%s-%s"
+                  (substring ts 0 4)   ;; YYYY
+                  (substring ts 4 6)   ;; MM
+                  (substring ts 6 8)   ;; DD
+                  (substring ts 9 15)  ;; HHMMSS (skip 'T')
+                  )))
+       (t str))))
+
+  (defun bk/howm-cut-title (str)
+    "Remove `#+title:` plus any following whitespace from STR if it starts with it."
+    (if (and str
+             (string-prefix-p "#+title:" (string-trim-left str)))
+        (string-trim-left
+         (string-remove-prefix "#+title:" (string-trim-left str)))
+      str))
+
+  (advice-add 'howm-view-item-basename
+              :filter-return 'bk/howm-basename-chop)
+  (advice-add 'howm-view-item-summary
+              :filter-return 'bk/howm-cut-title)
+
+  (setq howm-file-name-format "%Y-%m-%d-%H%M%S.org"
+        howm-view-title-header "#+title:"
+        howm-dtime-format "[%Y-%m-%d %a %H:%M]"
+        howm-menu-file-extension ".org"))
+
+(defun bk/meow-open-line ()
+  (interactive)
+  (open-line 1)
+  (meow-insert))
+
+(defun bk/meow-append ()
+  "Move to the end of selection, switch to INSERT state."
+  (interactive)
+  (if meow--temp-normal
+      (progn
+        (message "Quit temporary normal mode")
+        (meow--switch-state 'motion))
+    (if (not (region-active-p))
+        (when (and (not (use-region-p))
+                   (< (point) (point-max)))
+          (forward-char 1))
+      (meow--direction-forward)
+      (meow--cancel-selection))
+    (meow--switch-state 'insert)))
+
+(defun bk/meow-join ()
+  "Joins line with line below it."
+  (interactive)
+  (meow-join -1)
+  (meow-kill))
+
+(use-package surround
   :ensure t)
 
 ;;; Meow
@@ -592,56 +751,21 @@
    '("j" . meow-next)
    '("k" . meow-prev)
    '("<escape>" . ignore))
-  (meow-leader-define-key
-   ;; SPC j/k will run the original command in MOTION state.
-   '("j" . "H-j")
-   '("k" . "H-k")
-   ;; Use SPC (0-9) for digit arguments.
-   '("1" . meow-digit-argument)
-   '("2" . meow-digit-argument)
-   '("3" . meow-digit-argument)
-   '("4" . meow-digit-argument)
-   '("5" . meow-digit-argument)
-   '("6" . meow-digit-argument)
-   '("7" . meow-digit-argument)
-   '("8" . meow-digit-argument)
-   '("9" . meow-digit-argument)
-   '("0" . meow-digit-argument)
-   '("/" . meow-keypad-describe-key)
-   '("?" . meow-cheatsheet))
+
+  ;; Meta
   (meow-normal-define-key
-   '("=" . expreg-expand)
-   '("+" . expreg-contract)
-   '("$" . back-to-indentation)
-   '("^" . end-of-line)
-   '("0" . meow-expand-0)
-   '("9" . meow-expand-9)
-   '("8" . meow-expand-8)
-   '("7" . meow-expand-7)
-   '("6" . meow-expand-6)
-   '("5" . meow-expand-5)
-   '("4" . meow-expand-4)
-   '("3" . meow-expand-3)
-   '("2" . meow-expand-2)
-   '("1" . meow-expand-1)
+   '("q" . meow-quit)
+   '("Q" . meow-cancel-selection)
+   '("i" . meow-insert)
+   '("I" . meow-open-above)
+   '("o" . bk/meow-append)
+   '("O" . meow-open-below)
+   '(":" . execute-extended-command)
+   '("<escape>" . ignore))
+
+  ;; Movement
+  (meow-normal-define-key
    '("-" . meow-reverse)
-   '(";" . comment-dwim)
-   '("," . meow-inner-of-thing)
-   '("." . meow-bounds-of-thing)
-   '("[" . meow-beginning-of-thing)
-   '("]" . meow-end-of-thing)
-   '("a" . meow-append)
-   '("A" . meow-open-below)
-   '("b" . meow-back-word)
-   '("B" . meow-back-symbol)
-   '("c" . meow-change)
-   '("d" . meow-delete)
-   '("D" . meow-backward-delete)
-   '("e" . meow-next-word)
-   '("E" . meow-next-symbol)
-   '("f" . meow-find)
-   '("g" . meow-cancel-selection)
-   '("G" . meow-grab)
    '("h" . meow-left)
    '("H" . meow-left-expand)
    '("i" . meow-insert)
@@ -652,40 +776,56 @@
    '("K" . meow-prev-expand)
    '("l" . meow-right)
    '("L" . meow-right-expand)
-   '("m" . meow-join)
-   '("n" . meow-search)
-   '("o" . meow-block)
-   '("O" . meow-to-block)
-   '("p" . meow-yank)
-   '("P" . consult-yank-pop)
-   '("q" . meow-quit)
-   '("Q" . consult-goto-line)
-   '("r" . meow-replace)
-   '("R" . meow-swap-grab)
-   '("S" . surround-insert)
-   '("s" . meow-kill)
-   '("t" . meow-till)
-   '("T" . completion-at-point)
-   '("u" . meow-undo)
-   '("U" . meow-undo-in-selection)
-   '("v" . meow-visit)
+   '("a" . meow-back-word)
+   '("A" . meow-back-symbol)
+   '("s" . meow-next-word)
+   '("S" . meow-next-symbol)
+   '("g" . avy-goto-word-1)
+   '("G" . avy-goto-line)
+   '("f" . isearch-forward)
+   '("F" . isearch-backward)
+   '("[" . bk/scroll-up-center)
+   '("]" . bk/scroll-down-center)
+   '("{" . beginning-of-buffer)
+   '("}" . end-of-buffer)
+   '("$" . back-to-indentation)
+   '("^" . end-of-line))
+
+  ;; Selection
+  (meow-normal-define-key
+   '("," . meow-inner-of-thing)
+   '("." . meow-bounds-of-thing)
+   '("<" . meow-beginning-of-thing)
+   '(">" . meow-end-of-thing)
    '("w" . meow-mark-word)
    '("W" . meow-mark-symbol)
-   '("x" . meow-line)
-   '("X" . meow-goto-line)
+   '("e" . meow-line)
+   '("z" . meow-join)
+   '("'" . expreg-expand)
+   '("\"" . expreg-contract))
+
+  ;; Edits
+  (meow-normal-define-key
+   '("x" . bk/meow-join)
+   '("X" . newline-and-indent))
+
+  ;; Selection Verbs
+  (meow-normal-define-key
+   '("d" . meow-kill)
    '("y" . meow-save)
-   '("Y" . meow-sync-grab)
-   '("z" . meow-pop-selection)
-   '("Z" . hydra-avy/body)
-   '("?" . consult-line)
-   '("'" . repeat)
-   '("/" . execute-extended-command)
-   ;;'("=" . expreg-expand)
-   ;;'("<up>" . windmove-up)
-   ;;'("<down>" . windmove-down)
-   ;;'("<left>" . windmove-left)
-   ;;'("<right>" . windmove-right)
-   '("<escape>" . ignore)))
+   '("Y" . meow-yank)
+   '("u" . meow-undo)
+   '("U" . meow-undo-in-selection)
+   '("c" . meow-change)
+   '("C" . meow-replace)
+   '(";" . comment-dwim)
+   '("\\" . fill-paragraph))
+
+  ;; Hydras
+  (meow-normal-define-key
+   '("/a" . hydra-avy/body)
+   '("/p" . hydra-project/body)
+   '("/e" . hydra-eglot/body)))
 
 (use-package meow
   :ensure t
@@ -709,70 +849,9 @@
   :init
   (add-hook 'vundo-mode-hook (lambda () (setq-local cursor-type nil))))
 
-(use-package hideshow
-  :ensure nil
-  :bind (("C-x h" . hs-cycle))
-  :hook ((prog-mode) . hs-minor-mode)
-  :config
-  ;; More functions
-  ;; @see https://karthinks.com/software/simple-folding-with-hideshow/
-  (defun hs-cycle (&optional level)
-    (interactive "p")
-    (let (message-log-max
-          (inhibit-message t))
-      (if (= level 1)
-          (pcase last-command
-            ('hs-cycle
-             (hs-hide-level 1)
-             (setq this-command 'hs-cycle-children))
-            ('hs-cycle-children
-             (save-excursion (hs-show-block))
-             (setq this-command 'hs-cycle-subtree))
-            ('hs-cycle-subtree
-             (hs-hide-block))
-            (_
-             (if (not (hs-already-hidden-p))
-                 (hs-hide-block)
-               (hs-hide-level 1)
-               (setq this-command 'hs-cycle-children))))
-        (hs-hide-level level)
-        (setq this-command 'hs-hide-level))))
-
-  (defun hs-toggle-all ()
-    "Toggle hide/show all."
-    (interactive)
-    (pcase last-command
-      ('hs-toggle-all
-       (save-excursion (hs-show-all))
-       (setq this-command 'hs-global-show))
-      (_ (hs-hide-all))))
-
-  ;; Display line counts
-  (defun hs-display-code-line-counts (ov)
-    "Display line counts when hiding codes."
-    (when (eq 'code (overlay-get ov 'hs))
-      (overlay-put ov 'display
-                   (concat
-                    " "
-                    (propertize
-                     (if (char-displayable-p ?⏷) "⏷" "...")
-                     'face 'shadow)
-                    (propertize
-                     (format " (%d lines)"
-                             (count-lines (overlay-start ov)
-                                          (overlay-end ov)))
-                     'face '(:inherit shadow :height 0.8))
-                    " "))))
-  (setq hs-set-up-overlay #'hs-display-code-line-counts))
-
-(use-package mistty)
-
 (use-package perfect-margin
   :config
   (setopt perfect-margin-visible-width 110))
-
-(use-package esh-autosuggest
-  :hook (eshell-mode . esh-autosuggest-mode))
 
 (use-package popper
   :custom
@@ -839,7 +918,6 @@
   (popper-echo-mode 1))
 
 (setq major-mode-remap-alist '((python-mode . python-ts-mode)))
-
 
 ;;; Programming Stuff
 ;;;; Apheleia | Linter
@@ -933,6 +1011,32 @@
   ;; Make `datatype` indent like `defun`
   (put 'datatype 'lisp-indent-function 'defun))
 (add-to-list 'auto-mode-alist '("\\.egg\\'" . egglog-mode))
+
+;;; markdown-mode
+(use-package markdown-mode
+  :ensure t
+  :defer t)
+
+;;; asciidoc-mode
+;;; TODO change font faces
+(use-package adoc-mode
+  :ensure t)
+
+;;; web-mode
+(use-package web-mode
+  :ensure t
+  :defer t
+  :mode
+  (("\\.phtml\\'" . web-mode)
+   ("\\.php\\'" . web-mode)
+   ("\\.tpl\\'" . web-mode)
+   ("\\.[agj]sp\\'" . web-mode)
+   ("\\.as[cp]x\\'" . web-mode)
+   ("\\.erb\\'" . web-mode)
+   ("\\.mustache\\'" . web-mode)
+   ("\\.djhtml\\'" . web-mode)
+   ("\\.mako\\'" . web-mode)))
+
 
 ;;; MODELINE
 (defsubst bk/mode-line-meow (active?)
