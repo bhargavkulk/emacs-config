@@ -561,20 +561,14 @@
           avy-style 'pre)
   :init
   (defhydra hydra-avy (:exit t :hint nil)
-    "
-   Line^^       Region^^        Goto
-  ----------------------------------------------
-   [_y_] yank   [_Y_] yank      [_c_] timed char
-   [_m_] move   [_M_] move      [_C_] char
-   [_k_] kill   [_K_] kill"
-    ("c" avy-goto-char-timer)
-    ("C" avy-goto-char)
-    ("m" avy-move-line)
-    ("M" avy-move-region)
-    ("k" avy-kill-whole-line)
-    ("K" avy-kill-region)
-    ("y" avy-copy-line)
-    ("Y" avy-copy-region)))
+    ("y" avy-copy-line "Yank" :column "Line")
+    ("m" avy-move-line "Move")
+    ("k" avy-kill-whole-line "Kill")
+    ("Y" avy-copy-region "Yank" :column "Region")
+    ("M" avy-move-region "Move")
+    ("K" avy-kill-region "Kill")
+    ("c" avy-goto-char-timer "Timed Char" :column "Goto")
+    ("C" avy-goto-char "Char")))
 
 ;;; RipGrep
 (use-package rg
@@ -754,6 +748,16 @@ with timestamps like \"20250711T111213\" converted to \"2025-07-11-111213\"."
 
   ;; Meta
   (meow-normal-define-key
+   '("0" . meow-expand-0)
+   '("9" . meow-expand-9)
+   '("8" . meow-expand-8)
+   '("7" . meow-expand-7)
+   '("6" . meow-expand-6)
+   '("5" . meow-expand-5)
+   '("4" . meow-expand-4)
+   '("3" . meow-expand-3)
+   '("2" . meow-expand-2)
+   '("1" . meow-expand-1)
    '("q" . meow-quit)
    '("Q" . meow-cancel-selection)
    '("i" . meow-insert)
@@ -813,7 +817,8 @@ with timestamps like \"20250711T111213\" converted to \"2025-07-11-111213\"."
   (meow-normal-define-key
    '("d" . meow-kill)
    '("y" . meow-save)
-   '("Y" . meow-yank)
+   '("p" . meow-yank)
+   '("P" . meow-yank-pop)
    '("u" . meow-undo)
    '("U" . meow-undo-in-selection)
    '("c" . meow-change)
@@ -890,8 +895,7 @@ with timestamps like \"20250711T111213\" converted to \"2025-07-11-111213\"."
           gnus-article-mode devdocs-mode
 
 
-          "^\\*Process List\\*$" process-menu-mode
-          list-environment-mode cargo-process-mode
+          "^\\*Process List\\*$" process-menu-mode list-environment-mode cargo-process-mode
 
           "\\*DAP Templates\\*$" dap-server-log-mode
           "\\*ELP Profiling Restuls\\*" profiler-report-mode
