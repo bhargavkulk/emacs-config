@@ -41,8 +41,6 @@
   (scroll-up-command)
   (recenter))
 
-(commandp 'bk/scroll-up-center)
-
 (defun bk/scroll-down-center ()
   "Scroll down and recenter cursor vertically."
   (interactive)
@@ -572,7 +570,12 @@
 
 ;;; RipGrep
 (use-package rg
-  :ensure t)
+  :ensure t
+  :init
+  (defhydra hydra-rg (:exit t :hint nil)
+    ("f" rg-dwim-current-file "Current File" :column "Ripgrep")
+    ("." rg-dwim-current-dir "Current Folder")
+    ("p" rg-dwim-current-project "Current Project")))
 
 (use-package org
   :ensure nil
@@ -830,7 +833,8 @@ with timestamps like \"20250711T111213\" converted to \"2025-07-11-111213\"."
   (meow-normal-define-key
    '("/a" . hydra-avy/body)
    '("/p" . hydra-project/body)
-   '("/e" . hydra-eglot/body)))
+   '("/e" . hydra-eglot/body)
+   '("/r" . hydra-rg/body)))
 
 (use-package meow
   :ensure t
@@ -1040,7 +1044,6 @@ with timestamps like \"20250711T111213\" converted to \"2025-07-11-111213\"."
    ("\\.mustache\\'" . web-mode)
    ("\\.djhtml\\'" . web-mode)
    ("\\.mako\\'" . web-mode)))
-
 
 ;;; MODELINE
 (defsubst bk/mode-line-meow (active?)
